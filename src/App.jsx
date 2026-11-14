@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { LOCATIONS, MARITAL, SEED_PROFILES, EXAMPLE_QUERIES } from './data.js'
 import { parseQuery, matchesSmart } from './smartSearch.js'
+import { ADMIN_PASSWORD } from './config.js'
 
 /* ---------- хранение в браузере (прототип без сервера) ---------- */
 const store = {
@@ -132,7 +133,7 @@ function Modal({ open, onClose, children, wide }) {
 }
 
 /* ---------- Шапка ---------- */
-function Header({ user, view, setView, onLogin, onLogout, onCreate }) {
+function Header({ user, admin, view, setView, onLogin, onLogout, onCreate, onAdminLogout }) {
   return (
     <header className="sticky top-0 z-40 border-b border-sand-200/70 bg-sand-50/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
@@ -142,10 +143,15 @@ function Header({ user, view, setView, onLogin, onLogout, onCreate }) {
                   </button>
         <nav className="flex items-center gap-2">
           <button onClick={() => setView('feed')} className={`hidden rounded-full px-4 py-2 text-sm sm:block ${view === 'feed' ? 'bg-emerald-800/10 text-emerald-900' : 'text-emerald-900/70 hover:bg-sand-100'}`}>Анкеты</button>
-          <button onClick={onCreate} className="whitespace-nowrap rounded-full bg-emerald-800 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-900">
-            <span className="sm:hidden">+ Анкета</span><span className="hidden sm:inline">Разместить анкету</span>
-          </button>
-          {user ? (
+          {admin && (
+            <>
+              <button onClick={onCreate} className="whitespace-nowrap rounded-full bg-emerald-800 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-900">
+                <span className="sm:hidden">+ Анкета</span><span className="hidden sm:inline">Добавить анкету</span>
+              </button>
+              <button onClick={onAdminLogout} className="whitespace-nowrap rounded-full bg-sand-200 px-3 py-2 text-xs font-medium text-sand-800 hover:bg-sand-300">Админ · выйти</button>
+            </>
+          )}
+          {admin ? null : user ? (
             <button onClick={onLogout} title="Выйти" className="whitespace-nowrap rounded-full border border-sand-300 px-3 py-2 text-xs text-emerald-900/80 hover:bg-sand-100">
               <span className="hidden sm:inline">{user.login.length > 14 ? user.login.slice(0, 12) + '…' : user.login} · </span>Выйти
             </button>
@@ -257,7 +263,8 @@ function Row({ label, children }) {
   )
 }
 
-function ProfileCard({ p, state, onContact }) {
+function ProfileCard({ p, state, onContact, admin, onEdit, onDelete }) {
+  const [confirmDel, setConfirmDel] = useState(false)
   const female = p.gender === 'female'
   const displayName = p.showName && p.name ? p.name : 'Имя при знакомстве'
   return (
@@ -303,7 +310,21 @@ function ProfileCard({ p, state, onContact }) {
       </div>
 
       <div className="mt-auto pt-5">
-        {state?.type === 'shown' ? (
+        {admin ? (
+          <div className="space-y-2">
+            <p className="rounded-xl bg-sand-50 px-3 py-2 text-center text-xs text-emerald-900/70">
+              {p.contact.type}: {p.contact.value}{p.hideContact ? ' · номер скрыт от пользователей' : ''}
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={() => onEdit(p)} className="rounded-xl border border-emerald-700 py-2.5 text-sm font-medium text-emerald-800 hover:bg-emerald-50">Изменить</button>
+              {confirmDel ? (
+                <button onClick={() => onDelete(p)} onBlur={() => setConfirmDel(false)} className="rounded-xl bg-red-700 py-2.5 text-sm font-medium text-white">Точно удалить?</button>
+              ) : (
+                <button onClick={() => setConfirmDel(true)} className="rounded-xl border border-red-200 py-2.5 text-sm text-red-700 hover:bg-red-50">Удалить</button>
+              )}
+            </div>
+          </div>
+        ) : state?.type === 'shown' ? (
           <a
             href={p.contact.type === 'WhatsApp' ? `https://wa.me/${p.contact.value.replace(/\D/g, '')}` : `https://t.me/${p.contact.value.replace('@', '')}`}
             target="_blank" rel="noreferrer"
@@ -315,14 +336,12 @@ function ProfileCard({ p, state, onContact }) {
           <div className="flex w-full items-center justify-center gap-2 rounded-2xl bg-sand-100 py-3 text-sm text-sand-800">
             {Icon.check()} Заявка отправлена
           </div>
-        ) : state?.type === 'own' ? (
-          <div className="flex w-full items-center justify-center rounded-2xl bg-emerald-50 py-3 text-sm text-emerald-800">Это ваша анкета</div>
         ) : (
           <button onClick={() => onContact(p)} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-800 py-3 text-sm font-medium text-white hover:bg-emerald-900">
             {p.hideContact && Icon.lock()} {p.hideContact ? 'Отправить заявку' : 'Показать контакты'}
           </button>
         )}
-        {p.hideContact && !state && <p className="mt-2 text-center text-[11px] text-emerald-900/50">Номер скрыт — откроется после одобрения</p>}
+        {p.hideContact && !state && !admin && <p className="mt-2 text-center text-[11px] text-emerald-900/50">Номер скрыт — откроется после одобрения</p>}
       </div>
     </article>
   )
@@ -353,7 +372,7 @@ function AuthModal({ open, onClose, onAuth, reason }) {
     <Modal open={open} onClose={onClose}>
       <div className="pr-8">
         <h2 className="text-2xl font-semibold text-emerald-950">{mode === 'register' ? 'Регистрация' : 'Вход'}</h2>
-        <p className="mt-1 text-sm text-emerald-900/70">{reason || 'Нужен, чтобы видеть контакты и размещать анкету.'}</p>
+        <p className="mt-1 text-sm text-emerald-900/70">{reason || 'Нужен, чтобы видеть контакты.'}</p>
       </div>
 
       <div className="mt-5 grid grid-cols-2 rounded-2xl bg-sand-100 p-1 text-sm">
@@ -399,7 +418,29 @@ function AuthModal({ open, onClose, onAuth, reason }) {
   )
 }
 
-/* ---------- Создание анкеты ---------- */
+/* ---------- Вход администратора ---------- */
+function AdminModal({ open, onClose, onOk }) {
+  const [pass, setPass] = useState('')
+  const [error, setError] = useState('')
+  const submit = (e) => {
+    e.preventDefault()
+    if (pass === ADMIN_PASSWORD) { setPass(''); setError(''); onOk() } else setError('Неверный пароль')
+  }
+  return (
+    <Modal open={open} onClose={onClose}>
+      <h2 className="pr-8 text-xl font-semibold text-emerald-950">Вход для администратора</h2>
+      <p className="mt-1 text-sm text-emerald-900/70">Админ может добавлять, менять и удалять анкеты.</p>
+      <form onSubmit={submit} className="mt-4 space-y-3">
+        <input type="password" autoFocus value={pass} onChange={(e) => setPass(e.target.value)} placeholder="Пароль"
+          className="w-full rounded-xl border border-sand-200 px-4 py-3 text-base outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/15" />
+        {error && <p className="text-sm text-red-700">{error}</p>}
+        <button className="w-full rounded-2xl bg-emerald-800 py-3 text-sm font-medium text-white hover:bg-emerald-900">Войти</button>
+      </form>
+    </Modal>
+  )
+}
+
+/* ---------- Форма анкеты (только админ) ---------- */
 const EMPTY_FORM = {
   gender: 'male', name: '', showName: true, age: '', country: 'Казахстан', city: 'Алматы', nationality: '',
   height: '', weight: '', marital: 'never', children: 'no', relocation: false, profession: '', hijab: '',
@@ -417,8 +458,15 @@ function Field({ label, children, hint }) {
 }
 const inputCls = 'w-full rounded-xl border border-sand-200 bg-white px-3 py-2.5 text-base sm:text-sm text-emerald-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/15'
 
-function CreateProfile({ onSubmit, onCancel }) {
-  const [f, setF] = useState(EMPTY_FORM)
+const toForm = (p) => ({
+  gender: p.gender, name: p.name || '', showName: !!p.showName, age: String(p.age), country: p.country, city: p.city,
+  nationality: p.nationality || '', height: p.height ? String(p.height) : '', weight: p.weight ? String(p.weight) : '',
+  marital: p.marital, children: p.children, relocation: !!p.relocation, profession: p.profession || '', hijab: p.hijab || '',
+  about: p.about, requirements: p.requirements, contactType: p.contact.type, contactValue: p.contact.value, hideContact: !!p.hideContact,
+})
+
+function ProfileForm({ initial, onSubmit, onCancel }) {
+  const [f, setF] = useState(() => (initial ? toForm(initial) : EMPTY_FORM))
   const [error, setError] = useState('')
   const set = (k) => (e) => {
     const v = e?.target ? (e.target.type === 'checkbox' ? e.target.checked : e.target.value) : e
@@ -434,25 +482,25 @@ function CreateProfile({ onSubmit, onCancel }) {
     if (f.contactValue.trim().length < 4) return setError('Укажите контакт в WhatsApp или Telegram')
     setError('')
     onSubmit({
-      id: 'u' + Date.now(), gender: f.gender, name: f.name.trim(), showName: f.showName && !!f.name.trim(), age,
+      id: initial?.id || 'u' + Date.now(), gender: f.gender, name: f.name.trim(), showName: f.showName && !!f.name.trim(), age,
       country: f.country, city: f.city, nationality: f.nationality.trim(),
       height: +f.height || null, weight: +f.weight || null, marital: f.marital, children: f.children,
       relocation: f.relocation, profession: f.profession.trim(), hijab: f.gender === 'female' ? f.hijab : '',
       about: f.about.trim(), requirements: f.requirements.trim(),
       contact: { type: f.contactType, value: f.contactValue.trim() }, hideContact: f.hideContact,
-      createdAt: Date.now(), isNew: true, own: true,
+      createdAt: initial?.createdAt || Date.now(), isNew: initial ? initial.isNew : true,
     })
   }
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-8">
       <button onClick={onCancel} className="text-sm text-emerald-800 hover:underline">← К анкетам</button>
-      <h1 className="mt-3 text-2xl font-semibold text-emerald-950">Новая анкета</h1>
-      <p className="mt-1 text-sm text-emerald-900/70">После публикации анкета сразу появится в ленте. Фото не нужны.</p>
+      <h1 className="mt-3 text-2xl font-semibold text-emerald-950">{initial ? 'Изменить анкету' : 'Новая анкета'}</h1>
+      <p className="mt-1 text-sm text-emerald-900/70">{initial ? 'Изменения сразу появятся в ленте.' : 'После сохранения анкета сразу появится в ленте.'}</p>
 
       <form onSubmit={submit} className="mt-6 space-y-6 rounded-2xl border border-sand-200 bg-white p-5 sm:p-7">
         <div className="grid grid-cols-2 rounded-2xl bg-sand-100 p-1 text-sm">
-          {[['male', 'Ищу жену'], ['female', 'Ищу мужа']].map(([k, t]) => (
+          {[['male', 'Мужчина'], ['female', 'Девушка']].map(([k, t]) => (
             <button type="button" key={k} onClick={() => set('gender')(k)} className={`rounded-xl py-2.5 ${f.gender === k ? 'bg-white font-medium text-emerald-900 shadow-sm' : 'text-emerald-900/60'}`}>{t}</button>
           ))}
         </div>
@@ -538,7 +586,7 @@ function CreateProfile({ onSubmit, onCancel }) {
         {error && <p className="text-sm text-red-700">{error}</p>}
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <button type="button" onClick={onCancel} className="rounded-2xl border border-sand-300 px-6 py-3 text-sm text-emerald-900">Отмена</button>
-          <button className="rounded-2xl bg-emerald-800 px-6 py-3 text-sm font-medium text-white hover:bg-emerald-900">Опубликовать</button>
+          <button className="rounded-2xl bg-emerald-800 px-6 py-3 text-sm font-medium text-white hover:bg-emerald-900">{initial ? 'Сохранить' : 'Опубликовать'}</button>
         </div>
       </form>
     </section>
@@ -547,7 +595,10 @@ function CreateProfile({ onSubmit, onCancel }) {
 
 /* ---------- Приложение ---------- */
 export default function App() {
-  const [userProfiles, setUserProfiles] = useState(() => store.get('nikah.profiles', []))
+  const [profiles, setProfiles] = useState(() => store.get('nikah.all', SEED_PROFILES))
+  const [admin, setAdmin] = useState(() => store.get('nikah.admin', false))
+  const [adminModal, setAdminModal] = useState(false)
+  const [editing, setEditing] = useState(null)
   const [user, setUser] = useState(() => store.get('nikah.user', null))
   const [contactState, setContactState] = useState(() => store.get('nikah.contacts', {}))
   const [view, setView] = useState('feed')
@@ -557,12 +608,13 @@ export default function App() {
   const [mobileFilters, setMobileFilters] = useState(false)
   const [toast, setToast] = useState('')
 
-  useEffect(() => store.set('nikah.profiles', userProfiles), [userProfiles])
+  useEffect(() => store.set('nikah.all', profiles), [profiles])
+  useEffect(() => store.set('nikah.admin', admin), [admin])
   useEffect(() => store.set('nikah.user', user), [user])
   useEffect(() => store.set('nikah.contacts', contactState), [contactState])
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(''), 3200); return () => clearTimeout(t) }, [toast])
 
-  const all = useMemo(() => [...userProfiles, ...SEED_PROFILES].sort((a, b) => b.createdAt - a.createdAt), [userProfiles])
+  const all = useMemo(() => [...profiles].sort((a, b) => b.createdAt - a.createdAt), [profiles])
   const { f: smart, chips } = useMemo(() => parseQuery(query), [query])
 
   const results = useMemo(() => all.filter((p) => {
@@ -586,7 +638,7 @@ export default function App() {
     if (p.hideContact) setToast('Заявка отправлена')
   })
 
-  const handleCreate = () => requireAuth('Войдите, чтобы разместить анкету.', () => { setView('create'); window.scrollTo(0, 0) })
+  const openForm = (p) => { if (!admin) return; setEditing(p); setView('create'); window.scrollTo(0, 0) }
 
   const onAuth = (u) => {
     setUser(u)
@@ -596,15 +648,22 @@ export default function App() {
     if (next) setTimeout(next, 0)
   }
 
-  const addProfile = (p) => {
-    setUserProfiles((s) => [{ ...p, owner: user?.login }, ...s])
-    setFilters(EMPTY_FILTERS); setQuery('')
-    setView('feed'); window.scrollTo(0, 0)
-    setToast('Анкета опубликована')
+  const saveProfile = (p) => {
+    if (!admin) return
+    const exists = profiles.some((x) => x.id === p.id)
+    setProfiles((s) => (exists ? s.map((x) => (x.id === p.id ? p : x)) : [p, ...s]))
+    if (!exists) { setFilters(EMPTY_FILTERS); setQuery('') }
+    setEditing(null); setView('feed'); window.scrollTo(0, 0)
+    setToast(exists ? 'Анкета сохранена' : 'Анкета добавлена')
+  }
+
+  const deleteProfile = (p) => {
+    if (!admin) return
+    setProfiles((s) => s.filter((x) => x.id !== p.id))
+    setToast('Анкета удалена')
   }
 
   const stateFor = (p) => {
-    if (p.own && p.owner === user?.login) return { type: 'own' }
     const s = contactState[p.id]
     return s ? { type: s } : null
   }
@@ -621,14 +680,15 @@ export default function App() {
   return (
     <div className="min-h-screen font-sans text-emerald-950">
       <Header
-        user={user} view={view} setView={setView}
+        user={user} admin={admin} view={view} setView={setView}
+        onAdminLogout={() => { setAdmin(false); setView('feed'); setToast('Вы вышли из режима админа') }}
         onLogin={() => setAuth({ open: true, reason: '', next: null })}
         onLogout={() => { setUser(null); setToast('Вы вышли из аккаунта') }}
-        onCreate={handleCreate}
+        onCreate={() => openForm(null)}
       />
 
-      {view === 'create' ? (
-        <CreateProfile onSubmit={addProfile} onCancel={() => setView('feed')} />
+      {view === 'create' && admin ? (
+        <ProfileForm key={editing?.id || 'new'} initial={editing} onSubmit={saveProfile} onCancel={() => { setEditing(null); setView('feed') }} />
       ) : (
         <>
           <SearchHero query={query} setQuery={setQuery} chips={chips} />
@@ -659,7 +719,7 @@ export default function App() {
 
               {results.length ? (
                 <div className="grid gap-4 md:grid-cols-2">
-                  {results.map((p) => <ProfileCard key={p.id} p={p} state={stateFor(p)} onContact={handleContact} />)}
+                  {results.map((p) => <ProfileCard key={p.id} p={p} state={stateFor(p)} onContact={handleContact} admin={admin} onEdit={openForm} onDelete={deleteProfile} />)}
                 </div>
               ) : (
                 <div className="rounded-2xl border border-dashed border-sand-300 bg-white p-10 text-center">
@@ -670,7 +730,7 @@ export default function App() {
               )}
 
               <div className="mt-8 rounded-2xl bg-sand-100 p-4 text-sm text-sand-800">
-                <p>Знакомьтесь с серьёзными намерениями и не пересылайте чужие контакты.</p>
+                <p>Знакомьтесь с серьёзными намерениями и не пересылайте чужие контакты. Анкеты добавляет администратор.</p>
               </div>
             </div>
           </main>
@@ -694,8 +754,11 @@ export default function App() {
         </div>
       )}
 
+      <AdminModal open={adminModal} onClose={() => setAdminModal(false)} onOk={() => { setAdmin(true); setAdminModal(false); setToast('Вы вошли как администратор') }} />
+
       <footer className="border-t border-sand-200 py-6 text-center text-xs text-emerald-900/50">
         Тестовая версия · анкеты примерные
+        {!admin && <> · <button onClick={() => setAdminModal(true)} className="underline hover:text-emerald-800">Вход для администратора</button></>}
       </footer>
     </div>
   )
