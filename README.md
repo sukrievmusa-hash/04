@@ -13,8 +13,8 @@
 Это прототип: сервера нет, аккаунт и созданные анкеты хранятся в браузере (localStorage). 10 анкет — тестовые, контакты ненастоящие.
 
 ## Стек
-React 18 + Tailwind CSS 3 + Vite. Сборка — один файл `docs/index.html`.
-Для публикации: Settings → Pages → Deploy from a branch → `main`, папка `/docs`.
+React 18 + Tailwind CSS 3 + Vite. Сборка — один файл: `index.html` в корне (его и отдаёт GitHub Pages) и копия в `docs/`. Исходная страница — `web/index.html`.
+Сайт: https://sukrievmusa-hash.github.io/04/
 
 ```bash
 npm install

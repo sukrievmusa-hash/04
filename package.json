@@ -4,7 +4,7 @@
   "description": "Черновик",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && cp docs/index.html index.html",
     "preview": "vite preview"
   },
   "repository": {
