@@ -13,7 +13,7 @@ const store = {
 }
 
 const AGE_MIN = 18
-const AGE_MAX = 60
+const AGE_MAX = 80
 const EMPTY_FILTERS = { gender: 'all', country: 'all', city: 'all', ageFrom: AGE_MIN, ageTo: AGE_MAX, marital: 'all', children: 'all', relocation: 'all' }
 
 const maritalLabel = (m, gender) => ({
