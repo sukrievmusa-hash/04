@@ -121,7 +121,7 @@ function Modal({ open, onClose, children, wide }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-emerald-950/40 backdrop-blur-sm sm:items-center sm:p-4" onClick={onClose}>
       <div
-        className={`animate-pop relative max-h-[92vh] w-full overflow-y-auto rounded-t-3xl bg-white p-6 shadow-2xl sm:rounded-3xl ${wide ? 'sm:max-w-2xl' : 'sm:max-w-md'}`}
+        className={`animate-pop relative max-h-[92vh] w-full overflow-y-auto rounded-t-3xl bg-white p-6 shadow-2xl sm:rounded-2xl ${wide ? 'sm:max-w-2xl' : 'sm:max-w-md'}`}
         onClick={(e) => e.stopPropagation()}
       >
         <button onClick={onClose} className="absolute right-4 top-4 rounded-full p-2 text-emerald-900/50 hover:bg-sand-100" aria-label="Закрыть">{Icon.close()}</button>
@@ -138,9 +138,8 @@ function Header({ user, view, setView, onLogin, onLogout, onCreate }) {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
         <button onClick={() => setView('feed')} className="flex items-center gap-2 text-emerald-800">
           {Icon.moon('w-6 h-6 text-emerald-700')}
-          <span className="font-serif text-2xl font-semibold tracking-wide">Никах</span>
-          <span className="hidden text-xs text-sand-600 sm:inline">· серьёзные знакомства для семьи</span>
-        </button>
+          <span className="text-xl font-semibold">Никах</span>
+                  </button>
         <nav className="flex items-center gap-2">
           <button onClick={() => setView('feed')} className={`hidden rounded-full px-4 py-2 text-sm sm:block ${view === 'feed' ? 'bg-emerald-800/10 text-emerald-900' : 'text-emerald-900/70 hover:bg-sand-100'}`}>Анкеты</button>
           <button onClick={onCreate} className="whitespace-nowrap rounded-full bg-emerald-800 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-900">
@@ -162,47 +161,44 @@ function Header({ user, view, setView, onLogin, onLogout, onCreate }) {
 /* ---------- Блок поиска ---------- */
 function SearchHero({ query, setQuery, chips }) {
   return (
-    <section className="border-b border-sand-200/70 bg-gradient-to-b from-emerald-900 to-emerald-800 text-white">
-      <div className="mx-auto max-w-6xl px-4 pb-8 pt-8 sm:pt-12">
-        <p className="font-serif text-lg text-sand-200">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
-        <h1 className="mt-2 font-serif text-3xl font-semibold leading-tight sm:text-5xl">Найдите спутника жизни<br className="hidden sm:block" /> в своём городе</h1>
-        <p className="mt-3 max-w-xl text-sm text-emerald-50/80 sm:text-base">Анкеты для никаха из Казахстана и России. Пишите запрос как в чате — система сама поймёт город, возраст и пожелания.</p>
+    <section className="border-b border-sand-200/70 bg-white">
+      <div className="mx-auto max-w-6xl px-4 pb-6 pt-6 sm:pt-8">
+        <h1 className="text-2xl font-semibold text-emerald-950 sm:text-3xl">Анкеты для никаха</h1>
+        <p className="mt-1 text-sm text-emerald-900/70">Казахстан и Россия. Выберите город и возраст или просто напишите, кого ищете.</p>
 
-        <div className="mt-6 flex items-center gap-2 rounded-2xl bg-white p-2 shadow-lg shadow-emerald-950/20">
-          <span className="pl-2 text-emerald-700">{Icon.search()}</span>
+        <div className="mt-4 flex items-center gap-2 rounded-xl border border-sand-300 bg-white px-2 py-1 focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-600/15">
+          <span className="pl-1 text-emerald-700">{Icon.search()}</span>
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Например: Алматы, без детей, покрытая"
+            placeholder="Например: Алматы, без детей"
             className="min-w-0 flex-1 bg-transparent py-2 text-base text-emerald-950 placeholder:text-emerald-900/40 outline-none"
           />
           {query && (
-            <button onClick={() => setQuery('')} className="rounded-xl p-2 text-emerald-900/40 hover:bg-sand-100" aria-label="Очистить">{Icon.close('w-4 h-4')}</button>
+            <button onClick={() => setQuery('')} className="rounded-lg p-2 text-emerald-900/40 hover:bg-sand-100" aria-label="Очистить">{Icon.close('w-4 h-4')}</button>
           )}
         </div>
 
         {chips.length > 0 && (
-          <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
-            <span className="text-emerald-50/70">Система поняла:</span>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+            <span className="text-emerald-900/60">Ищем:</span>
             {chips.map((c) => (
-              <span key={c} className="rounded-full bg-white/15 px-2.5 py-1 text-white">{c}</span>
+              <span key={c} className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-800">{c}</span>
             ))}
           </div>
         )}
 
-        <div className="mt-5">
-          <p className="mb-2 text-xs uppercase tracking-wider text-sand-200/80">Попробуйте запрос:</p>
-          <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
-            {EXAMPLE_QUERIES.map((q) => (
-              <button
-                key={q}
-                onClick={() => setQuery(q)}
-                className={`shrink-0 rounded-full border px-3.5 py-1.5 text-sm transition ${query === q ? 'border-sand-200 bg-sand-100 text-emerald-900' : 'border-white/25 text-white hover:bg-white/10'}`}
-              >
-                {q}
-              </button>
-            ))}
-          </div>
+        <div className="no-scrollbar -mx-4 mt-3 flex items-center gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
+          <span className="shrink-0 text-xs text-emerald-900/50">Примеры:</span>
+          {EXAMPLE_QUERIES.map((q) => (
+            <button
+              key={q}
+              onClick={() => setQuery(q)}
+              className={`shrink-0 rounded-full border px-3 py-1 text-sm transition ${query === q ? 'border-emerald-700 bg-emerald-50 text-emerald-800' : 'border-sand-200 bg-sand-50 text-emerald-900/80 hover:bg-sand-100'}`}
+            >
+              {q}
+            </button>
+          ))}
         </div>
       </div>
     </section>
@@ -265,21 +261,21 @@ function ProfileCard({ p, state, onContact }) {
   const female = p.gender === 'female'
   const displayName = p.showName && p.name ? p.name : 'Имя при знакомстве'
   return (
-    <article className="animate-pop flex flex-col rounded-3xl border border-sand-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+    <article className="animate-pop flex flex-col rounded-2xl border border-sand-200 bg-white p-5 shadow-sm transition hover:shadow-md">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl font-serif text-xl ${female ? 'bg-sand-100 text-sand-800' : 'bg-emerald-50 text-emerald-800'}`}>
-            {p.showName && p.name ? p.name[0] : female ? 'С' : 'Б'}
+          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-xl ${female ? 'bg-sand-100 text-sand-800' : 'bg-emerald-50 text-emerald-800'}`}>
+            {p.showName && p.name ? p.name[0] : female ? 'Д' : 'М'}
           </div>
           <div>
-            <h3 className={`font-serif text-xl font-semibold leading-tight ${p.showName && p.name ? 'text-emerald-950' : 'italic text-emerald-900/70'}`}>{displayName}</h3>
+            <h3 className={`text-lg font-semibold leading-tight ${p.showName && p.name ? 'text-emerald-950' : 'text-emerald-900/60'}`}>{displayName}</h3>
             <p className="mt-0.5 flex items-center gap-1 text-sm text-emerald-900/70">
               {p.age} {ageWord(p.age)} · {Icon.pin('w-3.5 h-3.5')} {p.city}
             </p>
           </div>
         </div>
         <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${female ? 'bg-sand-100 text-sand-800' : 'bg-emerald-50 text-emerald-800'}`}>
-          {female ? 'Сестра' : 'Брат'}
+          {female ? 'Девушка' : 'Мужчина'}
         </span>
       </div>
 
@@ -317,16 +313,16 @@ function ProfileCard({ p, state, onContact }) {
           </a>
         ) : state?.type === 'requested' ? (
           <div className="flex w-full items-center justify-center gap-2 rounded-2xl bg-sand-100 py-3 text-sm text-sand-800">
-            {Icon.check()} Заявка отправлена — ждём одобрения
+            {Icon.check()} Заявка отправлена
           </div>
         ) : state?.type === 'own' ? (
           <div className="flex w-full items-center justify-center rounded-2xl bg-emerald-50 py-3 text-sm text-emerald-800">Это ваша анкета</div>
         ) : (
           <button onClick={() => onContact(p)} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-800 py-3 text-sm font-medium text-white hover:bg-emerald-900">
-            {p.hideContact && Icon.lock()} {p.hideContact ? 'Отправить заявку на знакомство' : 'Показать контакты / Написать'}
+            {p.hideContact && Icon.lock()} {p.hideContact ? 'Отправить заявку' : 'Показать контакты'}
           </button>
         )}
-        {p.hideContact && !state && <p className="mt-2 text-center text-[11px] text-emerald-900/50">Контакт откроется после одобрения заявки</p>}
+        {p.hideContact && !state && <p className="mt-2 text-center text-[11px] text-emerald-900/50">Номер скрыт — откроется после одобрения</p>}
       </div>
     </article>
   )
@@ -356,8 +352,8 @@ function AuthModal({ open, onClose, onAuth, reason }) {
   return (
     <Modal open={open} onClose={onClose}>
       <div className="pr-8">
-        <h2 className="font-serif text-2xl font-semibold text-emerald-950">{mode === 'register' ? 'Регистрация' : 'Вход'}</h2>
-        <p className="mt-1 text-sm text-emerald-900/70">{reason || 'Чтобы видеть контакты и размещать анкету, войдите в аккаунт.'}</p>
+        <h2 className="text-2xl font-semibold text-emerald-950">{mode === 'register' ? 'Регистрация' : 'Вход'}</h2>
+        <p className="mt-1 text-sm text-emerald-900/70">{reason || 'Нужен, чтобы видеть контакты и размещать анкету.'}</p>
       </div>
 
       <div className="mt-5 grid grid-cols-2 rounded-2xl bg-sand-100 p-1 text-sm">
@@ -390,14 +386,14 @@ function AuthModal({ open, onClose, onAuth, reason }) {
         {mode === 'register' && (
           <label className="flex items-start gap-2 text-xs text-emerald-900/70">
             <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 accent-emerald-700" />
-            Я ищу супруга(у) для никаха, обязуюсь соблюдать адаб общения и не передавать контакты третьим лицам.
+            Согласен(на) с правилами: не передаю чужие контакты третьим лицам.
           </label>
         )}
         {error && <p className="text-sm text-red-700">{error}</p>}
         <button className="w-full rounded-2xl bg-emerald-800 py-3 text-sm font-medium text-white hover:bg-emerald-900">
           {mode === 'register' ? 'Создать аккаунт' : 'Войти'}
         </button>
-        <p className="text-center text-[11px] text-emerald-900/50">Прототип: данные хранятся только в вашем браузере, SMS и письма не отправляются.</p>
+        <p className="text-center text-[11px] text-emerald-900/50">Тестовая версия: SMS и письма не отправляются.</p>
       </form>
     </Modal>
   )
@@ -451,12 +447,12 @@ function CreateProfile({ onSubmit, onCancel }) {
   return (
     <section className="mx-auto max-w-3xl px-4 py-8">
       <button onClick={onCancel} className="text-sm text-emerald-800 hover:underline">← К анкетам</button>
-      <h1 className="mt-3 font-serif text-3xl font-semibold text-emerald-950 sm:text-4xl">Создать свою анкету</h1>
-      <p className="mt-2 text-sm text-emerald-900/70">Анкета сразу появится в общей ленте. Фото не публикуются — только текст, как принято в никах-сервисах.</p>
+      <h1 className="mt-3 text-2xl font-semibold text-emerald-950">Новая анкета</h1>
+      <p className="mt-1 text-sm text-emerald-900/70">После публикации анкета сразу появится в ленте. Фото не нужны.</p>
 
-      <form onSubmit={submit} className="mt-6 space-y-6 rounded-3xl border border-sand-200 bg-white p-5 sm:p-7">
+      <form onSubmit={submit} className="mt-6 space-y-6 rounded-2xl border border-sand-200 bg-white p-5 sm:p-7">
         <div className="grid grid-cols-2 rounded-2xl bg-sand-100 p-1 text-sm">
-          {[['male', 'Я брат — ищу жену'], ['female', 'Я сестра — ищу мужа']].map(([k, t]) => (
+          {[['male', 'Ищу жену'], ['female', 'Ищу мужа']].map(([k, t]) => (
             <button type="button" key={k} onClick={() => set('gender')(k)} className={`rounded-xl py-2.5 ${f.gender === k ? 'bg-white font-medium text-emerald-900 shadow-sm' : 'text-emerald-900/60'}`}>{t}</button>
           ))}
         </div>
@@ -516,7 +512,7 @@ function CreateProfile({ onSubmit, onCancel }) {
           Готов(а) к переезду в другой город
         </label>
 
-        <Field label="О себе *" hint="Намаз, чем занимаетесь, характер, семья — коротко и честно.">
+        <Field label="О себе *" hint="Пара предложений: работа, намаз, характер.">
           <textarea className={inputCls + ' min-h-[96px]'} value={f.about} onChange={set('about')} />
         </Field>
         <Field label={f.gender === 'male' ? 'Требования к жене *' : 'Требования к мужу *'}>
@@ -535,14 +531,14 @@ function CreateProfile({ onSubmit, onCancel }) {
         <Toggle
           checked={f.hideContact}
           onChange={(v) => setF((s) => ({ ...s, hideContact: v }))}
-          label="Скрывать мой номер телефона, пока я не одобрю заявку"
-          hint="Другие пользователи будут отправлять вам заявку, а контакт увидят только после вашего согласия."
+          label="Скрывать мой номер, пока я не одобрю заявку"
+          hint="Сначала вам придёт заявка, номер увидят только после вашего согласия."
         />
 
         {error && <p className="text-sm text-red-700">{error}</p>}
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <button type="button" onClick={onCancel} className="rounded-2xl border border-sand-300 px-6 py-3 text-sm text-emerald-900">Отмена</button>
-          <button className="rounded-2xl bg-emerald-800 px-6 py-3 text-sm font-medium text-white hover:bg-emerald-900">Опубликовать анкету</button>
+          <button className="rounded-2xl bg-emerald-800 px-6 py-3 text-sm font-medium text-white hover:bg-emerald-900">Опубликовать</button>
         </div>
       </form>
     </section>
@@ -585,18 +581,18 @@ export default function App() {
 
   const requireAuth = (reason, next) => (user ? next() : setAuth({ open: true, reason, next }))
 
-  const handleContact = (p) => requireAuth('Зарегистрируйтесь, чтобы увидеть контакты или отправить заявку на знакомство.', () => {
+  const handleContact = (p) => requireAuth('Войдите, чтобы увидеть контакты.', () => {
     setContactState((s) => ({ ...s, [p.id]: p.hideContact ? 'requested' : 'shown' }))
-    if (p.hideContact) setToast('Заявка отправлена. Контакт откроется, когда её одобрят.')
+    if (p.hideContact) setToast('Заявка отправлена')
   })
 
-  const handleCreate = () => requireAuth('Чтобы разместить анкету, создайте аккаунт — так другие смогут отправлять вам заявки.', () => { setView('create'); window.scrollTo(0, 0) })
+  const handleCreate = () => requireAuth('Войдите, чтобы разместить анкету.', () => { setView('create'); window.scrollTo(0, 0) })
 
   const onAuth = (u) => {
     setUser(u)
     const next = auth.next
     setAuth({ open: false, reason: '', next: null })
-    setToast('Добро пожаловать! Вы вошли как ' + u.login)
+    setToast('Вы вошли')
     if (next) setTimeout(next, 0)
   }
 
@@ -604,7 +600,7 @@ export default function App() {
     setUserProfiles((s) => [{ ...p, owner: user?.login }, ...s])
     setFilters(EMPTY_FILTERS); setQuery('')
     setView('feed'); window.scrollTo(0, 0)
-    setToast('Анкета опубликована и уже в ленте')
+    setToast('Анкета опубликована')
   }
 
   const stateFor = (p) => {
@@ -639,8 +635,8 @@ export default function App() {
 
           <main className="mx-auto grid max-w-6xl gap-6 px-4 py-6 lg:grid-cols-[280px_1fr]">
             <aside className="hidden lg:block">
-              <div className="sticky top-20 rounded-3xl border border-sand-200 bg-white p-5">
-                <h2 className="mb-4 font-serif text-xl font-semibold">Фильтры</h2>
+              <div className="sticky top-20 rounded-2xl border border-sand-200 bg-white p-5">
+                <h2 className="mb-4 text-xl font-semibold">Фильтры</h2>
                 {filtersBlock}
               </div>
             </aside>
@@ -666,16 +662,15 @@ export default function App() {
                   {results.map((p) => <ProfileCard key={p.id} p={p} state={stateFor(p)} onContact={handleContact} />)}
                 </div>
               ) : (
-                <div className="rounded-3xl border border-dashed border-sand-300 bg-white p-10 text-center">
-                  <p className="font-serif text-2xl text-emerald-900">Анкет не найдено</p>
-                  <p className="mt-2 text-sm text-emerald-900/60">Попробуйте расширить возраст или выбрать другой город.</p>
+                <div className="rounded-2xl border border-dashed border-sand-300 bg-white p-10 text-center">
+                  <p className="text-lg font-medium text-emerald-900">Ничего не нашлось</p>
+                  <p className="mt-2 text-sm text-emerald-900/60">Попробуйте другой город или возраст.</p>
                   <button onClick={reset} className="mt-5 rounded-full bg-emerald-800 px-5 py-2.5 text-sm text-white">Сбросить фильтры</button>
                 </div>
               )}
 
-              <div className="mt-8 rounded-3xl bg-sand-100 p-5 text-sm text-sand-800">
-                <p className="font-serif text-lg font-semibold text-emerald-900">Адаб знакомства</p>
-                <p className="mt-1">Общение — с серьёзным намерением и с ведома родителей или махрама. Не пересылайте чужие контакты и анкеты третьим лицам.</p>
+              <div className="mt-8 rounded-2xl bg-sand-100 p-4 text-sm text-sand-800">
+                <p>Знакомьтесь с серьёзными намерениями и не пересылайте чужие контакты.</p>
               </div>
             </div>
           </main>
@@ -684,7 +679,7 @@ export default function App() {
 
       {/* Фильтры на телефоне — нижняя шторка */}
       <Modal open={mobileFilters} onClose={() => setMobileFilters(false)}>
-        <h2 className="mb-4 font-serif text-2xl font-semibold">Фильтры</h2>
+        <h2 className="mb-4 text-2xl font-semibold">Фильтры</h2>
         {filtersBlock}
         <button onClick={() => setMobileFilters(false)} className="mt-3 w-full rounded-2xl bg-emerald-800 py-3 text-sm font-medium text-white">
           Показать {results.length} {anketWord(results.length)}
@@ -700,7 +695,7 @@ export default function App() {
       )}
 
       <footer className="border-t border-sand-200 py-6 text-center text-xs text-emerald-900/50">
-        Прототип никах-сервиса · все анкеты тестовые
+        Тестовая версия · анкеты примерные
       </footer>
     </div>
   )
