@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { LOCATIONS, MARITAL, SEED_PROFILES, EXAMPLE_QUERIES } from './data.js'
 import { parseQuery, matchesSmart } from './smartSearch.js'
-import { ADMIN_PASSWORD } from './config.js'
+import { ADMIN_PASSWORD, ADMIN_WHATSAPP } from './config.js'
 
 /* ---------- хранение в браузере (прототип без сервера) ---------- */
 const store = {
@@ -96,20 +96,6 @@ function AgeRange({ from, to, onChange }) {
   )
 }
 
-function Toggle({ checked, onChange, label, hint }) {
-  return (
-    <button type="button" onClick={() => onChange(!checked)} className="flex w-full items-start gap-3 rounded-2xl border border-sand-200 bg-sand-50 p-4 text-left">
-      <span className={`relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition ${checked ? 'bg-emerald-700' : 'bg-sand-300'}`}>
-        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${checked ? 'left-[22px]' : 'left-0.5'}`} />
-      </span>
-      <span>
-        <span className="block text-sm font-medium text-emerald-950">{label}</span>
-        {hint && <span className="mt-0.5 block text-xs text-emerald-900/60">{hint}</span>}
-      </span>
-    </button>
-  )
-}
-
 function Modal({ open, onClose, children, wide }) {
   useEffect(() => {
     if (!open) return
@@ -133,7 +119,7 @@ function Modal({ open, onClose, children, wide }) {
 }
 
 /* ---------- Шапка ---------- */
-function Header({ user, admin, view, setView, onLogin, onLogout, onCreate, onAdminLogout }) {
+function Header({ user, admin, view, setView, onLogin, onLogout, onCreate, onAdminLogout, newRequests }) {
   return (
     <header className="sticky top-0 z-40 border-b border-sand-200/70 bg-sand-50/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
@@ -148,7 +134,11 @@ function Header({ user, admin, view, setView, onLogin, onLogout, onCreate, onAdm
               <button onClick={onCreate} className="whitespace-nowrap rounded-full bg-emerald-800 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-900">
                 <span className="sm:hidden">+ Анкета</span><span className="hidden sm:inline">Добавить анкету</span>
               </button>
-              <button onClick={onAdminLogout} className="whitespace-nowrap rounded-full bg-sand-200 px-3 py-2 text-xs font-medium text-sand-800 hover:bg-sand-300">Админ · выйти</button>
+              <button onClick={() => setView('requests')} className={`relative whitespace-nowrap rounded-full border px-3 py-2 text-sm ${view === 'requests' ? 'border-emerald-700 bg-emerald-50 text-emerald-800' : 'border-sand-300 text-emerald-900 hover:bg-sand-100'}`}>
+                Заявки
+                {newRequests > 0 && <span className="absolute -right-1 -top-1 rounded-full bg-red-600 px-1.5 text-[11px] text-white">{newRequests}</span>}
+              </button>
+              <button onClick={onAdminLogout} className="whitespace-nowrap rounded-full bg-sand-200 px-3 py-2 text-xs font-medium text-sand-800 hover:bg-sand-300"><span className="hidden sm:inline">Админ · </span>выйти</button>
             </>
           )}
           {admin ? null : user ? (
@@ -313,7 +303,7 @@ function ProfileCard({ p, state, onContact, admin, onEdit, onDelete }) {
         {admin ? (
           <div className="space-y-2">
             <p className="rounded-xl bg-sand-50 px-3 py-2 text-center text-xs text-emerald-900/70">
-              {p.contact.type}: {p.contact.value}{p.hideContact ? ' · номер скрыт от пользователей' : ''}
+              Контакт (видит только админ): {p.contact.type} {p.contact.value}
             </p>
             <div className="grid grid-cols-2 gap-2">
               <button onClick={() => onEdit(p)} className="rounded-xl border border-emerald-700 py-2.5 text-sm font-medium text-emerald-800 hover:bg-emerald-50">Изменить</button>
@@ -324,24 +314,16 @@ function ProfileCard({ p, state, onContact, admin, onEdit, onDelete }) {
               )}
             </div>
           </div>
-        ) : state?.type === 'shown' ? (
-          <a
-            href={p.contact.type === 'WhatsApp' ? `https://wa.me/${p.contact.value.replace(/\D/g, '')}` : `https://t.me/${p.contact.value.replace('@', '')}`}
-            target="_blank" rel="noreferrer"
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-emerald-700 bg-emerald-50 py-3 text-sm font-medium text-emerald-800"
-          >
-            {p.contact.type}: {p.contact.value}
-          </a>
         ) : state?.type === 'requested' ? (
           <div className="flex w-full items-center justify-center gap-2 rounded-2xl bg-sand-100 py-3 text-sm text-sand-800">
-            {Icon.check()} Заявка отправлена
+            {Icon.check()} Заявка у администратора
           </div>
         ) : (
           <button onClick={() => onContact(p)} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-800 py-3 text-sm font-medium text-white hover:bg-emerald-900">
-            {p.hideContact && Icon.lock()} {p.hideContact ? 'Отправить заявку' : 'Показать контакты'}
+            {Icon.lock()} Познакомиться через админа
           </button>
         )}
-        {p.hideContact && !state && !admin && <p className="mt-2 text-center text-[11px] text-emerald-900/50">Номер скрыт — откроется после одобрения</p>}
+        {!admin && <p className="mt-2 text-center text-[11px] text-emerald-900/50">Контакты не показываются — знакомство только через администратора</p>}
       </div>
     </article>
   )
@@ -372,7 +354,7 @@ function AuthModal({ open, onClose, onAuth, reason }) {
     <Modal open={open} onClose={onClose}>
       <div className="pr-8">
         <h2 className="text-2xl font-semibold text-emerald-950">{mode === 'register' ? 'Регистрация' : 'Вход'}</h2>
-        <p className="mt-1 text-sm text-emerald-900/70">{reason || 'Нужен, чтобы видеть контакты.'}</p>
+        <p className="mt-1 text-sm text-emerald-900/70">{reason || 'Нужен, чтобы отправлять заявки на знакомство.'}</p>
       </div>
 
       <div className="mt-5 grid grid-cols-2 rounded-2xl bg-sand-100 p-1 text-sm">
@@ -418,6 +400,120 @@ function AuthModal({ open, onClose, onAuth, reason }) {
   )
 }
 
+/* ---------- Заявка на знакомство (уходит админу) ---------- */
+const profileLabel = (p) => `${p.showName && p.name ? p.name : 'Без имени'}, ${p.age} ${ageWord(p.age)}, ${p.city}`
+
+function RequestModal({ profile, user, onClose, onSend }) {
+  const [form, setForm] = useState({ name: '', phone: '', wali: '', message: '' })
+  const [sent, setSent] = useState(null)
+  const [error, setError] = useState('')
+  useEffect(() => {
+    if (profile) {
+      setForm({ name: '', phone: user?.method === 'phone' ? user.login : '', wali: '', message: '' })
+      setSent(null); setError('')
+    }
+  }, [profile, user])
+  const set = (k) => (e) => setForm((s) => ({ ...s, [k]: e.target.value }))
+
+  const submit = (e) => {
+    e.preventDefault()
+    if (form.name.trim().length < 2) return setError('Как к вам обращаться?')
+    if (form.phone.replace(/\D/g, '').length < 10) return setError('Укажите номер, по которому админ с вами свяжется')
+    setError('')
+    const req = {
+      id: 'r' + Date.now(), profileId: profile.id, profileLabel: profileLabel(profile),
+      fromName: form.name.trim(), fromPhone: form.phone.trim(), wali: form.wali.trim(), message: form.message.trim(),
+      account: user?.login || '', status: 'new', createdAt: Date.now(),
+    }
+    onSend(req)
+    setSent(req)
+  }
+
+  const waText = sent && encodeURIComponent(
+    `Ассаляму алейкум! Заявка на знакомство с анкетой: ${sent.profileLabel} (№ ${sent.profileId}).\n` +
+    `Меня зовут ${sent.fromName}, тел. ${sent.fromPhone}.` + (sent.wali ? `\nКонтакт вали/родителей: ${sent.wali}.` : '') +
+    (sent.message ? `\n${sent.message}` : '')
+  )
+
+  return (
+    <Modal open={!!profile} onClose={onClose}>
+      {sent ? (
+        <div className="pr-6">
+          <h2 className="text-xl font-semibold text-emerald-950">Заявка отправлена администратору</h2>
+          <p className="mt-2 text-sm text-emerald-900/75">Админ свяжется с вами по номеру {sent.fromPhone}, а затем с семьёй второй стороны. Напрямую контакты не передаются.</p>
+          {ADMIN_WHATSAPP && (
+            <a href={`https://wa.me/${ADMIN_WHATSAPP}?text=${waText}`} target="_blank" rel="noreferrer" className="mt-4 flex w-full items-center justify-center rounded-2xl bg-emerald-800 py-3 text-sm font-medium text-white">
+              Продублировать админу в WhatsApp
+            </a>
+          )}
+          <button onClick={onClose} className="mt-3 w-full rounded-2xl border border-sand-300 py-3 text-sm text-emerald-900">Готово</button>
+        </div>
+      ) : profile && (
+        <>
+          <h2 className="pr-8 text-xl font-semibold text-emerald-950">Знакомство через администратора</h2>
+          <p className="mt-1 text-sm text-emerald-900/70">Анкета: {profileLabel(profile)}. Администратор свяжется с вами и с семьёй второй стороны — без личной переписки.</p>
+          <form onSubmit={submit} className="mt-4 space-y-3">
+            <input className={inputCls} value={form.name} onChange={set('name')} placeholder="Ваше имя *" />
+            <input className={inputCls} value={form.phone} onChange={set('phone')} type="tel" inputMode="tel" placeholder="Ваш телефон для связи с админом *" />
+            <input className={inputCls} value={form.wali} onChange={set('wali')} placeholder="Телефон вали / родителей (необязательно)" />
+            <textarea className={inputCls + ' min-h-[80px]'} value={form.message} onChange={set('message')} placeholder="Коротко о себе для админа (необязательно)" />
+            {error && <p className="text-sm text-red-700">{error}</p>}
+            <button className="w-full rounded-2xl bg-emerald-800 py-3 text-sm font-medium text-white hover:bg-emerald-900">Отправить админу</button>
+          </form>
+        </>
+      )}
+    </Modal>
+  )
+}
+
+/* ---------- Заявки (для админа) ---------- */
+const STATUS = { new: 'Новая', work: 'В работе', done: 'Закрыта' }
+
+function RequestsView({ requests, profiles, onStatus, onDelete, onBack }) {
+  const byId = Object.fromEntries(profiles.map((p) => [p.id, p]))
+  return (
+    <section className="mx-auto max-w-3xl px-4 py-8">
+      <button onClick={onBack} className="text-sm text-emerald-800 hover:underline">← К анкетам</button>
+      <h1 className="mt-3 text-2xl font-semibold text-emerald-950">Заявки на знакомство</h1>
+      <p className="mt-1 text-sm text-emerald-900/70">Свяжитесь с отправителем, затем с семьёй второй стороны. Стороны контактов друг друга не видят.</p>
+      {requests.length === 0 ? (
+        <div className="mt-6 rounded-2xl border border-dashed border-sand-300 bg-white p-8 text-center text-sm text-emerald-900/60">Заявок пока нет</div>
+      ) : (
+        <div className="mt-6 space-y-3">
+          {requests.map((r) => {
+            const p = byId[r.profileId]
+            return (
+              <div key={r.id} className="rounded-2xl border border-sand-200 bg-white p-4 text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs text-emerald-900/50">{new Date(r.createdAt).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                  <select value={r.status} onChange={(e) => onStatus(r.id, e.target.value)} className={`rounded-full border px-3 py-1 text-xs ${r.status === 'new' ? 'border-red-200 bg-red-50 text-red-700' : r.status === 'work' ? 'border-sand-300 bg-sand-100 text-sand-800' : 'border-emerald-200 bg-emerald-50 text-emerald-800'}`}>
+                    {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                  </select>
+                </div>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-xl bg-sand-50 p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-sand-600">Кто пишет</p>
+                    <p className="mt-1 font-medium">{r.fromName}</p>
+                    <p>{r.fromPhone}</p>
+                    {r.wali && <p className="text-emerald-900/70">Вали / родители: {r.wali}</p>}
+                    {r.message && <p className="mt-1 text-emerald-900/80">{r.message}</p>}
+                  </div>
+                  <div className="rounded-xl bg-emerald-50/60 p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-emerald-800/70">Анкета</p>
+                    <p className="mt-1 font-medium">{r.profileLabel}</p>
+                    {p ? <p>{p.contact.type}: {p.contact.value}</p> : <p className="text-red-700">Анкета удалена</p>}
+                  </div>
+                </div>
+                <button onClick={() => onDelete(r.id)} className="mt-3 text-xs text-red-700 hover:underline">Удалить заявку</button>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </section>
+  )
+}
+
 /* ---------- Вход администратора ---------- */
 function AdminModal({ open, onClose, onOk }) {
   const [pass, setPass] = useState('')
@@ -444,7 +540,7 @@ function AdminModal({ open, onClose, onOk }) {
 const EMPTY_FORM = {
   gender: 'male', name: '', showName: true, age: '', country: 'Казахстан', city: 'Алматы', nationality: '',
   height: '', weight: '', marital: 'never', children: 'no', relocation: false, profession: '', hijab: '',
-  about: '', requirements: '', contactType: 'WhatsApp', contactValue: '', hideContact: true,
+  about: '', requirements: '', contactType: 'WhatsApp', contactValue: '',
 }
 
 function Field({ label, children, hint }) {
@@ -462,7 +558,7 @@ const toForm = (p) => ({
   gender: p.gender, name: p.name || '', showName: !!p.showName, age: String(p.age), country: p.country, city: p.city,
   nationality: p.nationality || '', height: p.height ? String(p.height) : '', weight: p.weight ? String(p.weight) : '',
   marital: p.marital, children: p.children, relocation: !!p.relocation, profession: p.profession || '', hijab: p.hijab || '',
-  about: p.about, requirements: p.requirements, contactType: p.contact.type, contactValue: p.contact.value, hideContact: !!p.hideContact,
+  about: p.about, requirements: p.requirements, contactType: p.contact.type, contactValue: p.contact.value,
 })
 
 function ProfileForm({ initial, onSubmit, onCancel }) {
@@ -487,7 +583,7 @@ function ProfileForm({ initial, onSubmit, onCancel }) {
       height: +f.height || null, weight: +f.weight || null, marital: f.marital, children: f.children,
       relocation: f.relocation, profession: f.profession.trim(), hijab: f.gender === 'female' ? f.hijab : '',
       about: f.about.trim(), requirements: f.requirements.trim(),
-      contact: { type: f.contactType, value: f.contactValue.trim() }, hideContact: f.hideContact,
+      contact: { type: f.contactType, value: f.contactValue.trim() },
       createdAt: initial?.createdAt || Date.now(), isNew: initial ? initial.isNew : true,
     })
   }
@@ -568,7 +664,7 @@ function ProfileForm({ initial, onSubmit, onCancel }) {
         </Field>
 
         <div className="grid gap-4 sm:grid-cols-[160px_1fr]">
-          <Field label="Контакт">
+          <Field label="Контакт (для админа)">
             <select className={inputCls} value={f.contactType} onChange={set('contactType')}><option>WhatsApp</option><option>Telegram</option></select>
           </Field>
           <Field label={f.contactType === 'WhatsApp' ? 'Номер WhatsApp *' : 'Ник в Telegram *'}>
@@ -576,12 +672,7 @@ function ProfileForm({ initial, onSubmit, onCancel }) {
           </Field>
         </div>
 
-        <Toggle
-          checked={f.hideContact}
-          onChange={(v) => setF((s) => ({ ...s, hideContact: v }))}
-          label="Скрывать мой номер, пока я не одобрю заявку"
-          hint="Сначала вам придёт заявка, номер увидят только после вашего согласия."
-        />
+        <p className="-mt-3 text-xs text-emerald-900/60">Контакт видит только администратор. Посетители сайта его не увидят.</p>
 
         {error && <p className="text-sm text-red-700">{error}</p>}
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
@@ -600,7 +691,9 @@ export default function App() {
   const [adminModal, setAdminModal] = useState(false)
   const [editing, setEditing] = useState(null)
   const [user, setUser] = useState(() => store.get('nikah.user', null))
-  const [contactState, setContactState] = useState(() => store.get('nikah.contacts', {}))
+  const [contactState, setContactState] = useState(() => store.get('nikah.sentRequests', {}))
+  const [requests, setRequests] = useState(() => store.get('nikah.requests', []))
+  const [requestFor, setRequestFor] = useState(null)
   const [view, setView] = useState('feed')
   const [query, setQuery] = useState('')
   const [filters, setFilters] = useState(EMPTY_FILTERS)
@@ -611,7 +704,8 @@ export default function App() {
   useEffect(() => store.set('nikah.all', profiles), [profiles])
   useEffect(() => store.set('nikah.admin', admin), [admin])
   useEffect(() => store.set('nikah.user', user), [user])
-  useEffect(() => store.set('nikah.contacts', contactState), [contactState])
+  useEffect(() => store.set('nikah.sentRequests', contactState), [contactState])
+  useEffect(() => store.set('nikah.requests', requests), [requests])
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(''), 3200); return () => clearTimeout(t) }, [toast])
 
   const all = useMemo(() => [...profiles].sort((a, b) => b.createdAt - a.createdAt), [profiles])
@@ -633,10 +727,12 @@ export default function App() {
 
   const requireAuth = (reason, next) => (user ? next() : setAuth({ open: true, reason, next }))
 
-  const handleContact = (p) => requireAuth('Войдите, чтобы увидеть контакты.', () => {
-    setContactState((s) => ({ ...s, [p.id]: p.hideContact ? 'requested' : 'shown' }))
-    if (p.hideContact) setToast('Заявка отправлена')
-  })
+  const handleContact = (p) => requireAuth('Войдите, чтобы отправить заявку на знакомство.', () => setRequestFor(p))
+
+  const sendRequest = (r) => {
+    setRequests((s) => [r, ...s])
+    setContactState((s) => ({ ...s, [r.profileId]: 'requested' }))
+  }
 
   const openForm = (p) => { if (!admin) return; setEditing(p); setView('create'); window.scrollTo(0, 0) }
 
@@ -685,9 +781,16 @@ export default function App() {
         onLogin={() => setAuth({ open: true, reason: '', next: null })}
         onLogout={() => { setUser(null); setToast('Вы вышли из аккаунта') }}
         onCreate={() => openForm(null)}
+        newRequests={requests.filter((r) => r.status === 'new').length}
       />
 
-      {view === 'create' && admin ? (
+      {view === 'requests' && admin ? (
+        <RequestsView
+          requests={requests} profiles={profiles} onBack={() => setView('feed')}
+          onStatus={(id, status) => setRequests((s) => s.map((r) => (r.id === id ? { ...r, status } : r)))}
+          onDelete={(id) => setRequests((s) => s.filter((r) => r.id !== id))}
+        />
+      ) : view === 'create' && admin ? (
         <ProfileForm key={editing?.id || 'new'} initial={editing} onSubmit={saveProfile} onCancel={() => { setEditing(null); setView('feed') }} />
       ) : (
         <>
@@ -730,7 +833,7 @@ export default function App() {
               )}
 
               <div className="mt-8 rounded-2xl bg-sand-100 p-4 text-sm text-sand-800">
-                <p>Знакомьтесь с серьёзными намерениями и не пересылайте чужие контакты. Анкеты добавляет администратор.</p>
+                <p>Все знакомства проходят только через администратора: контакты анкет не показываются, личной переписки между мужчинами и женщинами на сайте нет. Админ связывается с обеими сторонами и их семьями.</p>
               </div>
             </div>
           </main>
@@ -753,6 +856,8 @@ export default function App() {
           {toast}
         </div>
       )}
+
+      <RequestModal profile={requestFor} user={user} onClose={() => setRequestFor(null)} onSend={sendRequest} />
 
       <AdminModal open={adminModal} onClose={() => setAdminModal(false)} onOk={() => { setAdmin(true); setAdminModal(false); setToast('Вы вошли как администратор') }} />
 
